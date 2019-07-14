@@ -1,0 +1,14 @@
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: "10.10.1.10"
+  bindPort: 6443
+
+---
+apiVersion: kubeadm.k8s.io/v1beta1
+kind: ClusterConfiguration
+kubernetesVersion: 1.14.4
+apiServer:
+  certSANs:
+  - "10.10.1.10"
+controlPlaneEndpoint: "10.10.1.10:6443"
