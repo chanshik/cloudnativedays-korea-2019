@@ -285,7 +285,7 @@ Kubernetes 클러스터를 생성할 때 사용할 설정 내용을 `kubeadm-con
 ```yaml
 apiVersion: kubeadm.k8s.io/v1beta1
 kind: ClusterConfiguration
-kubernetesVersion: 1.14.3
+kubernetesVersion: 1.14.4
 controlPlaneEndpoint: "10.10.1.2:6443"
 ```
 
@@ -889,6 +889,8 @@ sudo vi /etc/kubernetes/kubelet.conf
 sudo vi /etc/kubernetes/scheduler.conf
 ```
 
+> `Worker` 노드에서는`/etc/kubernetes/kubelet.conf` 파일을 수정합니다. 
+
 
 
 ## Regenerate Certificates
@@ -995,13 +997,11 @@ sudo systemctl restart docker && sudo systemctl restart kubelet
 
 
 
-이번 실습에서는 따로 구성해두지 않았지만, 만약에 `Worker` 노드가 존재한다면 `kubelet` 데몬을 재시작합니다.
+이번 실습에서는 따로 구성해두지 않았지만, 만약에 `Worker` 노드가 존재한다면, `/etc/kubernetes/kubelet.conf` 파일 안에 있는 IP 주소를 변경한 이후에  `kubelet` 데몬을 재시작합니다.
 
 ```bash
 sudo systemctl restart kubelet
 ```
-
-> `Worker` 노드에는 인증서를 복사하는 작업이 필요없습니다.
 
 
 
