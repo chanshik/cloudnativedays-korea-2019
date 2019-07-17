@@ -1941,3 +1941,14 @@ d1b2a02160efbf38, started, node-3, https://10.10.1.4:2380, https://10.10.1.4:237
 
 Kubernetes 클러스터를 관리하는 데 반드시 필요한 `etcd` 클러스터를 직접 추가하고 삭제하는 실습을 진행하였습니다. Kubernetes 클러스터 노드가 증가하거나 안정성을 강화하기 위해서`etcd` 클러스터를 생성하는 작업이 필요한 경우에 도움이 될 수 있을 것입니다.
 
+
+
+## Kubernetes Hands-on and Presentation
+
+이번 실습에서는 `Master` 노드를 추가하고 관리하는 부분에 초점을 맞추고 있습니다. 아래 링크들을 통해 Kubernetes 클러스터를 활용하고 관리하는 데 유용한 정보를 공유하고 있습니다.
+
+- https://github.com/chanshik/kubernetes-201811-meetup
+- https://github.com/chanshik/ceph-201812-meetup
+- https://github.com/chanshik/mysql-operator-hands-on
+- https://www.slideshare.net/chanshiklim/kubernetes-on-premise-practical-guide
+
