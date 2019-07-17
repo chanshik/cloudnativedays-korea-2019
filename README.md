@@ -1405,6 +1405,14 @@ get /registry/services/specs/default/nginx -w json
 
 ## Remove  node-3
 
+`node-3` 이  `ControlPlaneEndpoint` IP 주소를 가져가지 않도록 `keepalived` 데몬을 정지합니다.
+
+```bash
+sudo systemctl stop keepalived
+```
+
+
+
 `kubectl delete node` 명령을 이용해 `node-3` 을 제거합니다.
 
 ```bash
@@ -1554,7 +1562,7 @@ cp ca.crt ca.key /etc/kubernetes/pki/etcd/
 
 
 
-인증서를 이용해서 `etcd` 에서 사용할 인증서를 생성합니다.
+`kubeadm init phase certs` 명령을 이용해서 `etcd` 에서 사용할 인증서를 생성합니다.
 
 ```bash
 sudo kubeadm init phase certs etcd-server
@@ -1700,7 +1708,15 @@ d1b2a02160efbf38, started, node-3, https://10.10.1.4:2380, https://10.10.1.4:237
 
 ## Add node-2 to etcd Cluster
 
-`node-2` 를 Kubernetes 노드에서 제거하고 `etcd` 클러스터로 사용해보겠습니다. 여기에서는 정삭적인 방법으로 제거하고 `etcd` 클러스터에 추가해보겠습니다.
+`node-2` 를 Kubernetes 노드에서 제거하고 `etcd` 클러스터로 사용해보겠습니다. 여기에서는 정상적인 방법으로 제거하고 `etcd` 클러스터에 추가해보겠습니다.
+
+
+
+`node-2` 가  `ControlPlaneEndpoint` IP 주소를 가져가지 않도록 `keepalived` 데몬을 정지합니다.
+
+```bash
+sudo systemctl stop keepalived
+```
 
 
 
@@ -1727,6 +1743,17 @@ iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
 
 If your cluster was setup to utilize IPVS, run ipvsadm --clear (or similar)
 to reset your system's IPVS tables.
+```
+
+
+
+`iptables` 설정까지도 모두 초기화하기 위해서 `root` 계정으로 콘솔에 나온 명령을 실행합니다.
+
+```bash
+sudo su - 
+iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+systemctl restart docker
+exit
 ```
 
 
@@ -1770,6 +1797,12 @@ ca.key                      100% 1675     2.0MB/s   00:00
 
 
 `/etc/kubernetes/pki/etcd/ca.crt` ,  `/etc/kubernetes/pki/etcd/ca.key`  파일을 복사하고 `kubeadm` 명령을 실행해 `etcd` 구성에 필요한 인증서 파일을 생성합니다.
+
+```bash
+sudo su - 
+mkdir -p /etc/kubernetes/pki/etcd
+cp ca.crt ca.key /etc/kubernetes/pki/etcd/
+```
 
 ```bash
 sudo kubeadm init phase certs etcd-server
@@ -1840,6 +1873,7 @@ dc663462bb967c64ce040064fcae5f98cdb7063ee7c6ce335751d11d42783aaa
 
 ```bash
 docker logs dc663
+
 2019-07-14 08:16:00.218325 I | etcdmain: etcd Version: 3.3.10
 2019-07-14 08:16:00.218520 I | etcdmain: Git SHA: 27fc7e2
 2019-07-14 08:16:00.218579 I | etcdmain: Go Version: go1.10.4
@@ -1874,9 +1908,9 @@ docker logs dc663
 
 ```bash
 sudo ETCDCTL_API=3 etcdctl --endpoints=https://10.10.1.2:2379 \
-  --cacert=/etc/ kubernetes/pki/etcd/ca.crt \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
   --cert=/etc/kubernetes/pki/etcd/server.crt \
-  --key=/etc/kubernetes/pki/etc d/server.key \
+  --key=/etc/kubernetes/pki/etcd/server.key \
 member list
 
 2ee7a00cdb8ac627, started, node-1, https://10.10.1.2:2380, https://10.10.1.2:2379
