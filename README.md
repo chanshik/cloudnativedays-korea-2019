@@ -291,6 +291,23 @@ controlPlaneEndpoint: "10.10.1.2:6443"
 
 
 
+Kubernetes 노드를 설정하는 과정에서 필요한 컨테이너 이미지를 `kubeadm config images pull` 명령을 이용해 미리 받아놓을 수 있습니다.
+
+```bash
+sudo kubeadm config images pull
+
+I0717 11:11:15.829201    6468 version.go:240] remote version is much newer: v1.15.0; falling back to: stable-1.14
+[config/images] Pulled k8s.gcr.io/kube-apiserver:v1.14.4
+[config/images] Pulled k8s.gcr.io/kube-controller-manager:v1.14.4
+[config/images] Pulled k8s.gcr.io/kube-scheduler:v1.14.4
+[config/images] Pulled k8s.gcr.io/kube-proxy:v1.14.4
+[config/images] Pulled k8s.gcr.io/pause:3.1
+[config/images] Pulled k8s.gcr.io/etcd:3.3.10
+[config/images] Pulled k8s.gcr.io/coredns:1.3.1
+```
+
+
+
 ## Initialize Master Node
 
 `kubeadm` 과 `kubeadm-config.yaml` 설정 파일을 이용해 클러스터를 생성합니다.
@@ -359,9 +376,11 @@ kubeadm join 10.10.1.2:6443 --token rq5lv3.sxw4t5oh4d9j1ije \
 
 
 
-`kubectl` 명령을 사용해 클러스터를 관리하기 위해서는 `/etc/kubernetes/admin.conf` 파일이 필요합니다. 이 파일을 `$HOME/.kube/config` 에 복사하고 읽기 권한을 주는 방법이 있습니다. 만약에 둘 이상의 클러스터를 관리하거나 다른 위치에 두고 싶다면, 파일을 복사하고 읽기 권한을 준 후에 `KUBECONFIG` 환경 변수에 해당 위치를 지정해주는 방법을 사용할 수 있습니다.
+`kubectl` 명령을 사용해 클러스터를 관리하기 위해서는 `/etc/kubernetes/admin.conf` 파일이 필요합니다. 해당 파일을 `$HOME/.kube/config` 에 복사하고 소유자를 현재 사용자로 변경하여 사용하도록 하겠습니다. 
 
-`kubeadm` 실행 결과에 나와있는 명령을 실행하면 `$HOME/.kube/config` 파일을 생성할 수 있습니다.
+만약에 둘 이상의 클러스터를 관리하거나 다른 위치에 두고 싶다면,  `KUBECONFIG` 환경 변수에 파일 위치를 지정하는 방법을 이용할 수 있습니다.
+
+다음 명령을 실행해 `$HOME/.kube/config` 파일을 생성합니다.
 
 ```bash
 mkdir -p $HOME/.kube
@@ -384,7 +403,7 @@ node-1   NotReady   master   2m14s   v1.14.3
 
 ## Install Network Addon
 
-아직까지는 노드 가  `NotReady` 상태입니다. 클러스터 구축을 마무리하기 위해서는 Network Addon 을 설치하는 작업이 필요합니다. 아래 페이지에서 선택할 수 있는 다양한 Addon 을 확인할 수 있습니다.
+아직은 노드 상태가  `NotReady` 인 것을 볼 수 있습니다. 클러스터 구축을 마무리하기 위해서는 `Network Addon` 을 설치하는 작업이 필요합니다. 아래 페이지에서 선택할 수 있는 다양한 Addon 을 확인할 수 있습니다.
 
 [Installing Addons](https://kubernetes.io/docs/concepts/cluster-administration/addons/)  
 
@@ -420,7 +439,7 @@ node-1   Ready    master   20m   v1.14.3
 
 `Master` 노드를 2대 더 추가하여 고가용성 클러스터를 구축하겠습니다.
 
-먼저 `Master` 노드에서 사용하고 있는 인증서를 새로 추가할 노드에 복사하는 작업이 필요합니다. 만약에 처음부터 바로 `Master` 를 추가하는 경우라면 (1.14.x 기준)
+먼저 `Master` 노드에서 사용하고 있는 인증서를 새로 추가할 노드에 복사하는 작업이 필요합니다. Kubernetes 1.14.x 버전 이상에서는 `kubeadm`  명령을 이용해 인증서를 복사하는 작업까지도 같이 진행할 수 있습니다.
 
 ```bash
 sudo kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs
@@ -653,12 +672,73 @@ kubeadm join 10.10.1.2:6443 --token fb8x4h.z6afmap8a757kojm --discovery-token-ca
 
 `kubeadm token` 명령 결과를 복사하고 `node-2`, `node-3` 에서 `kubeadm join` 명령을 실행합니다. 이 때, `--experimental-control-plane` 옵션을 추가하여 `Master` 역할을 부여하도록 설정합니다.
 
+> Kubernetes 1.15.x 이상 버전에서는 `--control-plane` 옵션을 사용합니다.
+
 ```bash
 sudo kubeadm join 10.10.1.2:6443 \
 --token fb8x4h.z6afmap8a757kojm \
 --discovery-token-ca-cert-hash \
 sha256:a062d83e9c49adad5403d12aa563bc72dc684ca09a822c511aa299103e2b5d72 \
 --experimental-control-plane
+
+[preflight] Running pre-flight checks
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[preflight] Running pre-flight checks before initializing the new control plane instance
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [node-2 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local] and IPs [10.96.0.1 10.10.1.3 10.10.1.2]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [node-2 localhost] and IPs [10.10.1.3 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [node-2 localhost] and IPs [10.10.1.3 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Valid certificates and keys now exist in "/etc/kubernetes/pki"
+[certs] Using the existing "sa" key
+[kubeconfig] Generating kubeconfig files
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+[check-etcd] Checking that the etcd cluster is healthy
+[kubelet-start] Downloading configuration for the kubelet from the "kubelet-config-1.14" ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Activating the kubelet service
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+[etcd] Announced new etcd member joining to the existing etcd cluster
+[etcd] Wrote Static Pod manifest for a local etcd member to "/etc/kubernetes/manifests/etcd.yaml"
+[etcd] Waiting for the new etcd member to join the cluster. This can take up to 40s
+[upload-config] storing the configuration used in ConfigMap "kubeadm-config" in the "kube-system" Namespace
+[mark-control-plane] Marking the node node-2 as control-plane by adding the label "node-role.kubernetes.io/master=''"
+[mark-control-plane] Marking the node node-2 as control-plane by adding the taints [node-role.kubernetes.io/master:NoSchedule]
+
+This node has joined the cluster and a new control plane instance was created:
+
+* Certificate signing request was sent to apiserver and approval was received.
+* The Kubelet was informed of the new secure connection details.
+* Control plane (master) label and taint were applied to the new node.
+* The Kubernetes control plane instances scaled up.
+* A new etcd member was added to the local/stacked etcd cluster.
+
+To start administering your cluster from this node, you need to run the following as a regular user:
+
+	mkdir -p $HOME/.kube
+	sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+	sudo chown $(id -u):$(id -g) $HOME/.kube/config
+
+Run 'kubectl get nodes' to see this node join the cluster.
 ```
 
 
@@ -710,7 +790,7 @@ weave-net-rkxrw                  2/2     Running   0          29m
 
 `kubeadm` 을 이용해 여러 대의  `Master`  노드로 구성된 클러스터를 구축하였습니다.
 
-`Master` 노드만 있는 클러스터에서 컨테이너를 배포하기 위해 아래 명령을 실행합니다.
+`Master` 노드에도 `Worker` 노드처럼 컨테이너를 배포할 수 있도록 아래 명령을 실행합니다.
 
 ```bash
 kubectl taint nodes --all node-role.kubernetes.io/master-
@@ -880,7 +960,7 @@ kubectl edit cm -n kube-public cluster-info
 
 ## Edit Config Files
 
-서버에서 사용하는 설정 파일 내용 중에 기존 IP 를 새로운 IP 로 변경합니다.
+`Master` 노드에서 사용하는 설정 파일 내용 중에 기존 IP 를 새로운 IP 로 변경합니다. 이 작업은 모든 `Master` 노드에서 진행하여야 합니다.
 
 ```bash
 sudo vi /etc/kubernetes/admin.conf
@@ -897,7 +977,7 @@ sudo vi /etc/kubernetes/scheduler.conf
 
 API Server 에 접속할 때 사용하는 인증서 안에는 기존 IP 가 그대로 남아있기 때문에, 새로 변경할 IP 를 넣어서 인증서를 다시 생성해야합니다.
 
-이 때, 변경될 IP 등에 대한 정보를 미리 설정 파일에 기록해두고 이 파일을 사용합니다.
+변경할 IP 정보를 설정 파일에 기록해두고 `kubeadm` 을 이용해 인증서를 생성할 때 사용합니다.
 
 **change-config.yaml**
 
@@ -997,7 +1077,7 @@ sudo systemctl restart docker && sudo systemctl restart kubelet
 
 
 
-이번 실습에서는 따로 구성해두지 않았지만, 만약에 `Worker` 노드가 존재한다면, `/etc/kubernetes/kubelet.conf` 파일 안에 있는 IP 주소를 변경한 이후에  `kubelet` 데몬을 재시작합니다.
+이번 실습에서는 따로 구성해두지 않았지만, `Worker` 노드에서는 `/etc/kubernetes/kubelet.conf` 파일 안에 있는 IP 주소를 변경한 이후에  `kubelet` 데몬을 재시작합니다.
 
 ```bash
 sudo systemctl restart kubelet
@@ -1195,37 +1275,7 @@ node-2   Ready      master   5h3m    v1.14.3
 node-3   Ready      master   5h2m    v1.14.3
 ```
 
-
-
 `node-1` 이 내려간 상태에서도 `kubectl` 을 이용해 명령을 실행하는 데는 문제가 없는 것을 확인할 수 있습니다.
-
-
-
-노드 실패에 대한 탐지를 좀 더 민감하게 변경하기 위해서는 `/etc/kubernetes/manifests/kube-controller-manager.yaml` 파일 안에 `--node-monitor-period`, `--node-monitor-grace-period`,  `--pod-eviction-timeout`  옵션을 추가하면 도움이 됩니다.
-
-```yaml
-...
-spec:
-  containers:
-  - command:
-    - kube-controller-manager
-    - --authentication-kubeconfig=/etc/kubernetes/controller-manager.conf
-    - --authorization-kubeconfig=/etc/kubernetes/controller-manager.conf
-    - --bind-address=127.0.0.1
-    - --client-ca-file=/etc/kubernetes/pki/ca.crt
-    - --cluster-signing-cert-file=/etc/kubernetes/pki/ca.crt
-    - --cluster-signing-key-file=/etc/kubernetes/pki/ca.key
-    - --controllers=*,bootstrapsigner,tokencleaner
-    - --kubeconfig=/etc/kubernetes/controller-manager.conf
-    - --leader-elect=true
-    - --requestheader-client-ca-file=/etc/kubernetes/pki/front-proxy-ca.crt
-    - --root-ca-file=/etc/kubernetes/pki/ca.crt
-    - --service-account-private-key-file=/etc/kubernetes/pki/sa.key
-    - --use-service-account-credentials=true
-    - --node-monitor-period=2s
-    - --node-monitor-grace-period=16s
-    - --pod-eviction-timeout=30s
-```
 
 
 
