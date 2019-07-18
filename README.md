@@ -1363,7 +1363,7 @@ member list
 sudo ETCDCTL_API=3 etcdctl  \
  --endpoints=https://10.10.1.2:2379  \
  --cacert /etc/kubernetes/pki/etcd/ca.crt  \
- --cert /etc/kubernetes/pki/etcd/peer. crt   \
+ --cert /etc/kubernetes/pki/etcd/peer.crt   \
  --key /etc/kubernetes/pki/etcd/peer.key \
 get --from-key "" --keys-only
 
@@ -1384,7 +1384,7 @@ get --from-key "" --keys-only
 sudo ETCDCTL_API=3 etcdctl  \
   --endpoints=https://10.10.1.2:2379  \
   --cacert /etc/kubernetes/pki/etcd/ca.crt  \
-  --cert /etc/kubernetes/pki/etcd/peer. crt   \
+  --cert /etc/kubernetes/pki/etcd/peer.crt   \
   --key /etc/kubernetes/pki/etcd/peer.key \
 get /registry/services/specs/default/nginx -w json
 
