@@ -238,6 +238,10 @@ kubeadm version: &version.Info{Major:"1", Minor:"14", GitVersion:"v1.14.3", GitC
 
 # Setup Single Control-Plane Cluster
 
+Single control plane node 로 구성된 클러스터를 생성해보겠습니다. 생성한 `Master` 노드는 `apiserver`, `controller-manager`, `scheduler`, `etcd` 를 모두 가지고 있습니다.
+
+![1563474484880](assets/1563474484880.png)
+
 ## Check Environments
 
 이번 실습에서는 컨테이너 런타임으로 `Docker` 를 사용합니다. 다른 런타임을 사용하고 싶다면 다음 공식 문서를 참고하여 원하는 런타임을 골라서 이용할 수 있습니다.
@@ -278,7 +282,7 @@ CONTAINER ID     IMAGE     COMMAND     CREATED       STATUS        PORTS        
 
 
 
-Kubernetes 클러스터를 생성할 때 사용할 설정 내용을 `kubeadm-config.yaml` 파일에 저장해두었습니다. 클러스터를 생성할 때 이 설정 파일을 이용합니다.
+Kubernetes 클러스터를 생성할 때 사용할 설정 내용을 `kubeadm-config.yaml` 파일에 저장해두었습니다. 클러스터를 생성할 때 이 설정 파일을 이용합니다. `controlPlaneEndpoint` 에 작성한 IP 주소는 일반적으로 `LoadBalancer`  IP 를 지정합니다. 그렇게 해야 `Master` 노드가 종료될 경우에 다른 `Master` 노드로 요청을 넘겨 전체 클러스터가 멈추는 상황을 방지할 수 있습니다. 지금 단계에서는 `Master` 노드로 사용할 `10.10.1.2` IP 주소를 넣어서 진행하겠습니다.
 
 **kubeadm-config.yaml**
 
@@ -434,6 +438,12 @@ node-1   Ready    master   20m   v1.14.3
 
 
 # Setup Multiple Master Cluster
+
+`Master` 노드를 두 대 더 추가하여, 총 세대로 구성된 Kubernetes 클러스터를 생성하겠습니다. 이 때, `etcd` 서버는 `apiserver`, `controller-manager`, `scheduler` 구성요소들과 같은 서버에 생성됩니다.
+
+![1563474780420](assets/1563474780420.png)
+
+
 
 ## Copy Certificate Files
 
@@ -674,6 +684,10 @@ kubeadm join 10.10.1.2:6443 --token fb8x4h.z6afmap8a757kojm --discovery-token-ca
 
 > Kubernetes 1.15.x 이상 버전에서는 `--control-plane` 옵션을 사용합니다.
 
+
+
+`node-2` 와 `node-3` 에서 위에서 복사한 명령을 실행합니다.
+
 ```bash
 sudo kubeadm join 10.10.1.2:6443 \
 --token fb8x4h.z6afmap8a757kojm \
@@ -809,6 +823,8 @@ node/node-3 untainted
 하지만, 클러스터가 가지고 있는`ControlPlaneEndpoint` 주소가 특정한 노드의 IP 주소이기 때문에 해당 노드가 실패할 경우에는 클러스터가 제대로 동작하지 않는 문제가 있습니다. 이를 극복하기 위해서 `ControlPlaneEndpoint` 에 `LoadBalancer` 주소를 할당하고, `LoadBalancer` 의 뒤에 `Master` 노드를 위치시키는 형태로 구성할 수 있습니다.
 
 이번 실습에서는  `Keepalived` 데몬을 이용해 `LoadBalancer` 처럼 가용성을 확보할 수 있게 설정해보겠습니다.
+
+![1563475411964](assets/1563475411964.png)
 
 
 
@@ -1400,6 +1416,8 @@ get /registry/services/specs/default/nginx -w json
 노드를 제거할 때 주의할 점은 `kubeadm reset` 을 먼저 실행해야 하는 것입니다. `kubeadm reset` 명령을 통해 노드를 제거하는 중간에 `etcd` 클러스터에서 현재 노드를 제거하는 작업을 진행합니다. 하지만, `kubectl delete node` 명령을 먼저 실행해둔 상황에서 `kubeadm reset` 명령은 `etcd` 클러스터를 조정하는 작업을 제대로 진행할 수 없어서 넘어가게 됩니다.
 
 아래 실습에서는 `kubectl delete node` 명령을 통해 노드를 먼저 제거하고 `etcd` 클러스터에서 노드를 제거하는 작업을 수동으로 하는 것을 진행해보겠습니다.
+
+![1563475336485](assets/1563475336485.png)
 
 
 
